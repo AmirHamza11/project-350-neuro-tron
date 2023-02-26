@@ -16,10 +16,14 @@
 package org.tensorflow.lite.examples.objectdetection.fragments
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Bitmap
+import android.os.Build
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.view.LayoutInflater
@@ -50,8 +54,8 @@ class CameraFragment : Fragment(), ObjectDetectorHelper.DetectorListener, TextTo
 
     private val TAG = "ObjectDetection"
     private var tts: TextToSpeech? = null
-    private var savedClasses: MutableList<String> = mutableListOf()
-    private var sameCount: Int = 0
+//    private var savedClasses: MutableList<String> = mutableListOf()
+    private var totalLatency: Long = 0
 
     private var _fragmentCameraBinding: FragmentCameraBinding? = null
 
@@ -332,19 +336,41 @@ class CameraFragment : Fragment(), ObjectDetectorHelper.DetectorListener, TextTo
         }
 
 
+//        Log.d("lltt", inferenceTime.toString())
 
-        if(sameCount == 20){
-            sameCount = 0
+        if(totalLatency < 10000){
+            totalLatency += inferenceTime
         }
 
-        if(results != null && sameCount == 0){
+        if(results!=null && totalLatency >= 2500){
             for(result in results) {
-                Log.d("same", "called")
-                    tts!!.speak(result.categories[0].label, TextToSpeech.QUEUE_ADD, null, "")
+//                Log.d("same", "called")
+                tts!!.speak(result.categories[0].label, TextToSpeech.QUEUE_ADD, null, "")
+
+                if(result.categories[0].label.equals("pothole")){
+                    val vibrator = activity?.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+                    if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+                        vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
+                    }else {
+                        vibrator.vibrate(500)
+                    }
+                }
            }
+            totalLatency = 0
         }
 
-        sameCount += 1
+//        if(sameCount == 20){
+//            sameCount = 0
+//        }
+//
+//        if(results != null && sameCount == 0){
+//            for(result in results) {
+//                Log.d("same", "called")
+//                    tts!!.speak(result.categories[0].label, TextToSpeech.QUEUE_ADD, null, "")
+//           }
+//        }
+//
+//        sameCount += 1
 
 //        if (results != null) {
 //            val newSavedClasses : MutableList<String> = mutableListOf()
